@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo-Liste · Dein Tagesplan</title>
+    <style>
+        :root {
+            --paper: #f2f6fc;
+            --ink: #172d50;
+            --blue: #245cdb;
+            --muted: #61738f;
+            --line: #dce5f2;
+            --yellow: #ffda70;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 64px 24px;
+            background: repeating-linear-gradient(to bottom, var(--paper) 0, var(--paper) 31px, var(--line) 32px);
+            color: var(--ink);
+            font-family: 'Segoe UI', sans-serif;
+        }
+        main { max-width: 680px; margin: auto; }
+        .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--blue); }
+        h1 { margin: 16px 0 12px; font-family: 'Trebuchet MS', sans-serif; font-size: clamp(40px, 8vw, 64px); letter-spacing: -0.055em; line-height: 1.05; }
+        h1 span { display: inline-block; background: var(--yellow); padding: 2px 12px 8px; border-radius: 8px; transform: rotate(-2deg); }
+        .intro { margin: 0 0 32px; color: var(--muted); line-height: 1.6; }
+        .notebook { background: white; border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 20px 60px #172d5010; overflow: hidden; }
+        form { padding: 28px; border-bottom: 1px solid var(--line); }
+        label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+        .input-row { display: flex; gap: 10px; }
+        input { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 14px 16px; color: var(--ink); font: inherit; }
+        input::placeholder { color: var(--muted); }
+        button { border: 0; border-radius: 10px; padding: 14px 20px; background: var(--blue); color: white; font: inherit; font-weight: 600; cursor: pointer; transition: background 150ms, transform 150ms; }
+        button:hover:not(:disabled) { background: #194ab7; transform: translateY(-1px); }
+        button:disabled, input:disabled { opacity: 0.6; cursor: wait; }
+        :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+        .list-heading { display: flex; align-items: center; justify-content: space-between; padding: 24px 28px 12px; }
+        h2 { font-size: 16px; margin: 0; }
+        #todoCount { font-size: 12px; font-weight: 600; background: var(--paper); border-radius: 20px; padding: 6px 10px; color: var(--muted); }
+        ul { list-style: none; padding: 0 28px 24px; margin: 0; }
+        .todo { display: flex; align-items: center; gap: 14px; padding: 18px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; line-height: 1.5; }
+        .todo:last-child { border-bottom: 0; }
+        .todo::before { content: ''; flex: 0 0 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+        .loading { min-height: 190px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; color: var(--muted); }
+        .spinner { width: 40px; height: 40px; border: 3px solid var(--line); border-top-color: var(--blue); border-right-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .empty { padding: 36px 0; color: var(--muted); line-height: 1.6; }
+        .error { padding: 20px 0; color: #a32d3b; line-height: 1.6; }
+        .error button { display: block; margin-top: 12px; }
+        #formMessage { margin: 12px 0 0; font-size: 14px; color: #a32d3b; }
+        #formMessage:empty { display: none; }
+        .calendar { margin-top: 24px; }
+        .calendar-heading { padding: 24px 28px 12px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+        .calendar-heading button { font-size: 13px; padding: 10px 12px; }
+        #calendarStatus { padding: 0 28px; margin: 0 0 8px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+        .event { padding: 18px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+        .event:last-child { border-bottom: 0; }
+        .event time { display: block; font-size: 13px; color: var(--blue); margin-bottom: 6px; }
+        .event small { display: block; margin-top: 6px; color: var(--muted); }
+        footer { padding: 20px 0; color: var(--muted); font-size: 12px; text-align: center; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 480px) {
+            body { padding: 36px 16px; }
+            form { padding: 20px; }
+            .input-row { flex-direction: column; }
+            .list-heading { padding: 24px 20px 12px; }
+            ul { padding: 0 20px 20px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .spinner { animation: none; }
+            button { transition: none; }
+        }
+        body { padding: 36px 32px; }
+        main { max-width: 1500px; display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 24px; }
+        header { grid-column: 1 / -1; position: relative; }
+        h1 { font-size: clamp(40px, 5vw, 64px); }
+        .intro { margin-bottom: 8px; }
+        .live-clock { position: absolute; right: 0; top: 0; text-align: right; }
+        #clock { display: block; font-size: 44px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }
+        #todayLabel { color: var(--muted); }
+        .calendar { grid-column: 1; grid-row: 2; margin: 0; }
+        .tasks { grid-column: 2; grid-row: 2; align-self: start; }
+        .tasks .input-row { flex-direction: column; }
+        #calendarHeading { font-size: 26px; margin-top: 8px; }
+        .calendar-controls { display: flex; gap: 12px; padding: 12px 28px 24px; flex-wrap: wrap; align-items: center; }
+        .calendar-controls button, .year-controls button { padding: 9px 12px; font-size: 13px; }
+        .view-switch { display: flex; background: var(--paper); border-radius: 10px; padding: 3px; }
+        .view-switch button { background: transparent; color: var(--ink); }
+        .view-switch button[aria-pressed="true"] { background: var(--blue); color: white; }
+        .date-controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        #selectedDate { width: auto; padding: 8px; font-size: 13px; }
+        .auto-label { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 12px; color: var(--muted); }
+        .auto-label input { width: 16px; height: 16px; accent-color: var(--blue); }
+        #schedule { padding: 0 28px 28px; }
+        .day-agenda { min-height: 240px; }
+        .agenda-list { padding: 0; }
+        .agenda-entry { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 18px; border-top: 1px solid var(--line); padding: 20px 0; overflow-wrap: anywhere; }
+        .agenda-entry time { color: var(--blue); font-weight: 600; font-variant-numeric: tabular-nums; }
+        .agenda-entry strong { font-size: 18px; }
+        .agenda-entry small { display: block; color: var(--muted); margin-top: 6px; }
+        .agenda-entry.next-event { background: #eef4ff; border-radius: 12px; padding: 20px 14px; border-top-color: transparent; }
+        .holiday-banner { background: #fff3d4; color: #79540a; border-radius: 10px; padding: 12px; margin: 0 0 16px; font-size: 14px; }
+        .week-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+        .week-day { min-height: 260px; border: 1px solid var(--line); border-radius: 12px; padding: 12px 8px; background: var(--paper); }
+        .week-day.is-today { border-color: var(--blue); }
+        .week-date { display: block; width: 100%; color: var(--ink); background: transparent; text-align: left; padding: 4px; font-size: 13px; }
+        .week-date span { display: block; font-size: 24px; }
+        .week-day .agenda-entry { display: block; padding: 12px 4px; }
+        .week-day .agenda-entry time { display: block; font-size: 12px; margin-bottom: 6px; }
+        .week-day .agenda-entry strong { font-size: 13px; }
+        .week-day .holiday-banner { font-size: 11px; padding: 8px 4px; margin-top: 12px; }
+        .week-day .empty { font-size: 12px; padding: 20px 4px; }
+        .year-calendar { grid-column: 1 / -1; }
+        .legend { margin: 0; padding: 0 28px 20px; font-size: 12px; color: var(--muted); }
+        .holiday-dot, .event-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #b53d47; margin-right: 4px; }
+        .event-dot { background: var(--blue); margin-left: 12px; }
+        #yearGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; padding: 0 28px 28px; }
+        .month h3 { margin: 0 0 12px; font-size: 15px; }
+        .month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+        .weekday { text-align: center; font-size: 10px; color: var(--muted); padding: 4px 0; }
+        .calendar-date { position: relative; background: transparent; color: var(--ink); border-radius: 7px; padding: 8px 0; font-size: 12px; min-height: 34px; }
+        .calendar-date.weekend { color: var(--muted); background: var(--paper); }
+        .calendar-date.holiday { color: #a32d3b; background: #fff0f1; }
+        .calendar-date.today { box-shadow: inset 0 0 0 1px var(--blue); }
+        .calendar-date.selected { background: var(--blue); color: white; }
+        .calendar-date.has-events::after { content: ''; position: absolute; bottom: 3px; left: calc(50% - 2px); width: 4px; height: 4px; border-radius: 50%; background: var(--blue); }
+        .calendar-date.selected::after { background: white; }
+        .agenda-entry.recurring-event { background: #f3edff; border-left: 3px solid #8251bd; padding-left: 14px; border-radius: 8px; }
+        .agenda-entry.recurring-event time { color: #7040a9; }
+        .recurring-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #8251bd; margin: 0 4px 0 12px; }
+        .calendar-date.has-recurring::after { background: #8251bd; }
+        .calendar-date.selected.has-recurring::after { background: white; }
+        .event-reminder { position: fixed; right: 28px; top: 28px; width: min(420px, calc(100vw - 32px)); max-height: calc(100vh - 56px); overflow-y: auto; z-index: 100; background: white; border: 2px solid var(--blue); border-radius: 18px; box-shadow: 0 16px 60px #172d5033; padding: 20px; animation: reminder-enter 200ms ease-out; }
+        .event-reminder[hidden] { display: none; }
+        .reminder-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .reminder-heading button { padding: 6px 12px; font-size: 22px; }
+        #reminderItems { padding: 0; margin: 16px 0 0; }
+        .reminder-item { padding: 12px; border-radius: 10px; background: var(--paper); margin-top: 8px; overflow-wrap: anywhere; }
+        .reminder-item.recurring-event { background: #f3edff; border-left: 3px solid #8251bd; }
+        .reminder-item strong, .reminder-item span { display: block; }
+        .reminder-item span { color: var(--muted); font-size: 13px; margin-top: 6px; }
+        @keyframes reminder-enter { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        @media (prefers-reduced-motion: reduce) { .event-reminder { animation: none; } }
+        footer { grid-column: 1 / -1; padding: 0; line-height: 1.8; }
+        footer a { color: inherit; }
+        .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+        @media (max-width: 1100px) {
+            main { grid-template-columns: minmax(0, 1fr); }
+            .calendar, .tasks { grid-column: 1; grid-row: auto; }
+            .calendar { order: 1; } .tasks { order: 2; } .year-calendar { order: 3; } footer { order: 4; }
+            .tasks .input-row { flex-direction: row; }
+            #yearGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        @media (max-width: 700px) {
+            body { padding: 24px 12px; }
+            .live-clock { position: static; text-align: left; margin-top: 16px; }
+            #clock { font-size: 32px; }
+            #yearGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 12px; padding: 0 16px 20px; }
+            .calendar-heading, .calendar-controls { padding-left: 16px; padding-right: 16px; }
+            #schedule { padding: 0 16px 20px; }
+            .week-grid { grid-template-columns: 1fr; }
+            .week-day { min-height: 0; }
+            .week-date span { display: inline; font-size: inherit; margin-left: 8px; }
+            .tasks .input-row { flex-direction: column; }
+        }
+        [hidden] { display: none !important; }
+        main { grid-template-columns: minmax(0, 1fr); max-width: 1280px; }
+        .calendar, .tasks { grid-column: 1; grid-row: auto; }
+        .calendar { order: 1; } .tasks { order: 2; } .year-calendar { order: 3; } footer { order: 4; }
+        .tasks .input-row { flex-direction: row; }
+        .live-clock #clock { font-size: clamp(44px, 6vw, 80px); }
+        .next-appointment { margin: 0 28px 28px; padding: 24px; background: #eaf1ff; border-radius: 16px; border-left: 5px solid var(--blue); }
+        .next-appointment strong { display: block; margin-top: 8px; font-size: clamp(24px, 3vw, 38px); overflow-wrap: anywhere; }
+        .next-appointment .next-caption { color: var(--blue); font-size: 14px; font-weight: 600; }
+        .next-appointment.recurring-event { background: #f3edff; border-left-color: #8251bd; }
+        .next-appointment.recurring-event .next-caption { color: #7040a9; }
+        .day-agenda .agenda-entry { grid-template-columns: 140px minmax(0,1fr); padding-top: 24px; padding-bottom: 24px; }
+        .day-agenda .agenda-entry time { font-size: clamp(22px, 3vw, 32px); }
+        .day-agenda .agenda-entry strong { font-size: clamp(22px, 3vw, 32px); }
+        .day-agenda .all-day-event time { font-size: 18px; white-space: nowrap; overflow-wrap: normal; }
+        .agenda-entry.past-event { opacity: 0.52; }
+        .agenda-section-label { font-size: 13px; color: var(--muted); margin: 24px 0 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+        @media (max-width: 700px) {
+            .next-appointment { margin: 0 16px 20px; padding: 20px; }
+            .day-agenda .agenda-entry { grid-template-columns: 90px minmax(0,1fr); gap: 12px; }
+            .day-agenda .agenda-entry time, .day-agenda .agenda-entry strong { font-size: 21px; }
+            .day-agenda .all-day-event { grid-template-columns: minmax(0,1fr); gap: 8px; }
+            .day-agenda .all-day-event time { font-size: 16px; }
+            .tasks .input-row { flex-direction: column; }
+        }
+        .agenda-entry time { white-space: nowrap; overflow-wrap: normal; }
+        .day-agenda .agenda-entry .time-label { font-size: 16px; line-height: 1.5; }
+        .compact-agenda .agenda-entry { grid-template-columns: 110px minmax(0,1fr); padding-top: 12px; padding-bottom: 12px; gap: 12px; }
+        .compact-agenda .agenda-entry time, .compact-agenda .agenda-entry strong { font-size: 21px; line-height: 1.35; }
+        .compact-agenda .agenda-entry small { font-size: 11px; margin-top: 3px; }
+        .compact-agenda .agenda-section-label { margin: 16px 0 8px; }
+        .dense-agenda .agenda-entry { padding-top: 8px; padding-bottom: 8px; }
+        .dense-agenda .agenda-entry time, .dense-agenda .agenda-entry strong { font-size: 18px; }
+        @media (min-width: 1100px) {
+            .dense-agenda .agenda-list { columns: 2; column-gap: 28px; }
+            .dense-agenda .agenda-entry { break-inside: avoid; }
+        }
+        @media (max-width: 700px) {
+            .day-agenda .agenda-entry .time-label { font-size: 14px; }
+            .compact-agenda .agenda-entry { grid-template-columns: 90px minmax(0,1fr); }
+            .compact-agenda .agenda-entry time, .compact-agenda .agenda-entry strong { font-size: 18px; }
+            .dense-agenda .agenda-entry time, .dense-agenda .agenda-entry strong { font-size: 16px; }
+            .day-agenda .all-day-event { grid-template-columns: minmax(0,1fr); }
+        }
+        body { padding: 16px 24px; }
+        main { gap: 14px; }
+        header { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; column-gap: 16px; }
+        header > .eyebrow { grid-column: 1; grid-row: 2; font-size: 10px; letter-spacing: 0.1em; }
+        header h1 { grid-column: 1; grid-row: 1; font-size: 30px; margin: 0 0 4px; }
+        header h1 span { padding: 0 8px 3px; border-radius: 5px; }
+        header .intro { display: none; }
+        header .live-clock { position: static; grid-column: 2; grid-row: 1 / 3; margin: 0; text-align: right; }
+        .live-clock #clock { font-size: 34px; line-height: 1.05; }
+        #todayLabel { display: block; font-size: 12px; margin-top: 4px; }
+        .calendar-heading { padding-top: 16px; padding-bottom: 8px; }
+        #calendarHeading { font-size: 22px; margin-top: 4px; }
+        .calendar-controls { padding-top: 6px; padding-bottom: 12px; gap: 8px; }
+        .next-appointment { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; margin-bottom: 14px; padding: 12px 16px; border-radius: 10px; }
+        .next-appointment strong { font-size: 23px; margin-top: 0; }
+        .next-appointment .next-caption { font-size: 12px; }
+        .agenda-section-label { margin-top: 16px; }
+        @media (max-width: 700px) {
+            body { padding: 12px; }
+            header { column-gap: 8px; }
+            header h1 { font-size: 26px; }
+            header > .eyebrow { font-size: 9px; }
+            .live-clock #clock { font-size: 28px; }
+            #todayLabel { font-size: 10px; max-width: 170px; }
+            .next-appointment strong { font-size: 20px; }
+        }
+        .due-field { margin-top: 14px; max-width: 240px; }
+        .due-field label { font-size: 12px; margin-bottom: 6px; color: var(--muted); }
+        .due-field input { padding: 10px 12px; }
+        .todo { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+        .todo::before { margin-top: 7px; }
+        .todo-content { flex: 1; min-width: 130px; }
+        .todo-title { display: block; font-weight: 600; }
+        .todo-due { display: inline-block; margin-top: 5px; font-size: 12px; color: var(--muted); }
+        .todo-due.overdue { color: #a32d3b; font-weight: 600; }
+        .todo-due.due-today { color: var(--blue); font-weight: 600; }
+        .todo-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .todo-actions button { font-size: 12px; padding: 8px 10px; }
+        .secondary-button { background: var(--paper); color: var(--ink); }
+        .danger-button { background: #fff0f1; color: #a32d3b; }
+        button.secondary-button:hover:not(:disabled) { background: #dce5f2; }
+        button.danger-button:hover:not(:disabled) { background: #fbdce0; }
+        @media (min-width: 1100px) {
+            body { padding: 24px 32px; }
+            main { max-width: 1840px; gap: 18px; }
+            header h1 { font-size: 42px; }
+            header > .eyebrow { font-size: 12px; }
+            .live-clock #clock { font-size: 50px; }
+            #todayLabel { font-size: 16px; }
+            #calendarHeading { font-size: 28px; }
+            .calendar-controls button, .calendar-heading button { font-size: 15px; padding: 10px 14px; }
+            .auto-label, #calendarStatus { font-size: 14px; }
+            .next-appointment strong { font-size: 30px; }
+            .next-appointment .next-caption { font-size: 16px; }
+            .week-grid { gap: 12px; }
+            .week-day { min-height: 380px; padding: 16px 10px; }
+            .week-date { font-size: 18px; }
+            .week-date span { font-size: 32px; }
+            .week-day .agenda-entry time { font-size: 18px; }
+            .week-day .agenda-entry strong { font-size: 20px; line-height: 1.4; }
+            .week-day .agenda-entry .time-label { font-size: 16px; }
+            .week-day .agenda-entry small { font-size: 12px; }
+            .week-day .holiday-banner, .week-day .empty { font-size: 14px; }
+        }
+        @media (min-width: 1600px) {
+            header h1 { font-size: 48px; }
+            .live-clock #clock { font-size: 58px; }
+            .week-day .agenda-entry strong { font-size: 23px; }
+            .week-day .agenda-entry time { font-size: 20px; }
+            .day-agenda.compact-agenda .agenda-entry strong, .day-agenda.compact-agenda .agenda-entry time { font-size: 26px; }
+            .day-agenda.dense-agenda .agenda-entry strong, .day-agenda.dense-agenda .agenda-entry time { font-size: 23px; }
+            .day-agenda .agenda-entry .time-label { font-size: 16px; }
+        }
+        .family-media { order: 1; align-self: start; background: #172d50; color: white; }
+        .photo-frame { margin: 0; height: 420px; display: flex; align-items: center; justify-content: center; }
+        #familyPhoto { display: block; width: 100%; height: 100%; object-fit: contain; }
+        .photo-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 12px; }
+        .photo-toolbar button { font-size: 12px; padding: 8px; }
+        #photoCount { margin-left: auto; font-size: 12px; }
+        .music-panel { grid-column: 1 / -1; order: 3; padding: 12px 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+        #musicStatus { font-size: 14px; color: var(--muted); }
+        .music-panel label { margin: 0; font-size: 12px; }
+        #musicVolume { width: 100px; padding: 0; }
+        @media (min-width: 1300px) {
+            main.has-photos { grid-template-columns: minmax(0, 1fr) 280px; }
+            .family-media { grid-column: 2; grid-row: 2; }
+            main.has-photos .calendar { grid-column: 1; grid-row: 2; }
+            .tasks, .year-calendar { grid-column: 1 / -1; }
+        }
+        .media-status { grid-column: 1 / -1; order: 4; margin: 0; color: var(--muted); font-size: 12px; }
+        .media-status:empty { display: none; }
+        .music-panel { min-height: 0; padding: 12px 18px; gap: 14px; border-radius: 14px; box-shadow: none; background: #f8faff; }
+        .music-info { flex: 1; min-width: 140px; }
+        #musicTrack { display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: min(60vw,900px); }
+        #musicStatus { display: block; font-size: 12px; line-height: 1.4; margin-top: 3px; }
+        #musicToggle { padding: 10px 14px; font-size: 13px; border-radius: 9px; }
+        #musicVolume { accent-color: var(--blue); }
+        .photo-frame { background: #172d50; }
+        @media (max-width:700px) { .music-panel { gap: 10px; } #musicTrack { max-width: 55vw; } }
+    </style>
+</head>
+<body>
+    <main>
+        <header>
+            <div class="eyebrow">Dein Homeoffice · Österreich</div><div class="live-clock"><time id="clock"></time><span id="todayLabel"></span></div>
+            <h1>Dein <span>Tag.</span></h1>
+            <p class="intro">Termine und Aufgaben. Alles an einem Platz.</p>
+        </header>
+        <section id="tasksPanel" class="notebook tasks" aria-label="Deine Todo-Liste" hidden>
+            <form id="todoForm">
+                <label for="todoinput">Was steht als Nächstes an?</label>
+                <div class="input-row">
+                    <input type="text" placeholder="Zum Beispiel: Obst kaufen" id="todoinput" required disabled>
+                    <button id="addButton" disabled>Hinzufügen</button><button type="button" id="cancelEdit" class="secondary-button" hidden>Abbrechen</button>
+                </div>
+                <div class="due-field"><label for="todoDueDate">Fällig am (optional)</label><input type="date" id="todoDueDate" disabled></div>
+                <p id="formMessage" role="alert"></p>
+            </form>
+            <div class="list-heading">
+                <h2>Deine Aufgaben</h2>
+                <span id="todoCount">Lädt…</span>
+            </div>
+            <ul id="todoList">
+                <li class="loading" role="status"><span class="spinner" aria-hidden="true"></span>Deine Aufgaben werden geladen…</li>
+            </ul>
+        </section>
+        <section class="notebook calendar" aria-labelledby="calendarHeading">
+            <div class="calendar-heading">
+                <div><div class="eyebrow">TimeTree-Kalender</div><h2 id="calendarHeading">Heute</h2></div>
+                <button type="button" id="refreshEvents">Neu laden</button>
+            </div>
+            <p id="calendarStatus" role="status">Termine werden geladen…</p>
+            <div class="calendar-controls">
+                <div class="view-switch" aria-label="Kalenderansicht">
+                    <button type="button" id="dayView" aria-pressed="true">Tag</button>
+                    <button type="button" id="weekView" aria-pressed="false">Woche</button>
+                </div>
+                <div class="date-controls">
+                    <button type="button" id="previousDate" aria-label="Vorheriger Tag">←</button>
+                    <button type="button" id="goToday">Heute</button>
+                    <button type="button" id="nextDate" aria-label="Nächster Tag">→</button>
+                    <label for="selectedDate" class="sr-only">Tag auswählen</label>
+                    <input type="date" id="selectedDate">
+                </div>
+                <button type="button" id="toggleYear" aria-expanded="false" aria-controls="yearPanel">Jahreskalender</button>
+                <button type="button" id="toggleTasks" aria-expanded="false" aria-controls="tasksPanel">Aufgaben</button>
+                <label class="auto-label"><input type="checkbox" id="autoView" checked> Tag ↔ Woche · Jede Minute</label>
+            </div>
+            <div id="nextAppointment" class="next-appointment" role="status"></div>
+            <div id="schedule"></div>
+        </section>
+        <section id="yearPanel" class="notebook year-calendar" aria-labelledby="yearHeading" hidden>
+            <div class="calendar-heading">
+                <div><div class="eyebrow">Österreich · Jahreskalender</div><h2 id="yearHeading"></h2></div>
+                <div class="year-controls"><button type="button" id="previousYear" aria-label="Vorheriges Jahr">←</button><button type="button" id="nextYear" aria-label="Nächstes Jahr">→</button></div>
+            </div>
+            <p class="legend"><span class="holiday-dot"></span> Gesetzlicher Feiertag <span class="event-dot"></span> Termin <span class="recurring-dot"></span> Serientermin · Tag anklicken zum Auswählen</p>
+            <div id="yearGrid"></div>
+        </section>
+        <aside id="familyMedia" class="notebook family-media" aria-label="Unsere Fotos" hidden>
+            <figure class="photo-frame"><img id="familyPhoto" alt="Unser Foto"></figure>
+            <div class="photo-toolbar"><button type="button" id="pausePhotos">Diashow pausieren</button><button type="button" id="nextPhoto">Nächstes Foto</button><span id="photoCount"></span></div>
+        </aside>
+        <section id="musicPanel" class="notebook music-panel" aria-label="Musik" hidden>
+            <button type="button" id="musicToggle">Musik starten</button><div class="music-info"><strong id="musicTrack">Lokale Musik</strong><span id="musicStatus" role="status"></span></div>
+            <label id="volumeLabel" for="musicVolume">Lautstärke</label><input id="musicVolume" type="range" min="0" max="1" step="0.05" value="0.25">
+            <audio id="backgroundMusic" preload="none"></audio>
+        </section>
+        <p id="photoStatus" class="media-status" role="status"></p>
+        <footer>Zeitzone Wien · <a href="https://www.wien.gv.at/inhalt/feiertage" target="_blank" rel="noopener">Gesetzliche Feiertage Österreich</a> · Serientermine zeigen derzeit nur ihren Ausgangstermin.</footer>
+    </main>
+    <aside id="eventReminder" class="event-reminder" role="status" aria-live="polite" aria-atomic="true" hidden>
+        <div class="reminder-heading"><strong>Dein Termin beginnt bald</strong><button type="button" id="dismissReminder" aria-label="Erinnerung schließen">×</button></div>
+        <ul id="reminderItems"></ul>
+    </aside>
+    <script src="tasks.js"></script>
+    <script src="calendar.js"></script>
+    <script src="media.js"></script>
+</body>
+</html>

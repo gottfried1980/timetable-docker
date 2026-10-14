@@ -1,0 +1,16 @@
+__pycache__/
+*.log
+*.png
+public/
+secrets/
+keys/
+*.key
+*.enc
+.env
+docker/node_modules/
+*.bak
+*.zip
+media/photos/*
+!media/photos/README.txt
+media/music/*
+!media/music/README.txt

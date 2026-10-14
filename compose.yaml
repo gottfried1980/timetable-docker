@@ -1,0 +1,69 @@
+services:
+  display:
+    build:
+      context: .
+      dockerfile: docker/display.Dockerfile
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${DISPLAY_BIND_ADDRESS:-0.0.0.0}:${DISPLAY_PORT:-8080}:3000"
+    volumes:
+      - timetable_data:/data
+      - ./media:/app/public/media:ro
+    environment:
+      TZ: Europe/Vienna
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/todos').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  sync:
+    build:
+      context: .
+      dockerfile: docker/sync.Dockerfile
+    restart: unless-stopped
+    init: true
+    depends_on:
+      display:
+        condition: service_healthy
+    environment:
+      TZ: Europe/Vienna
+      JSON_SERVER_URL: http://display:3000
+      TIMETREE_SESSION_FILE: /run/secrets/timetree_session
+      TIMETREE_KEY_FILE: /run/secrets/timetree_key
+      TIMETREE_CALENDAR: "${TIMETREE_CALENDAR:?Set TIMETREE_CALENDAR in .env}"
+      SYNC_INTERVAL_SECONDS: "900"
+    secrets:
+      - timetree_session
+      - timetree_key
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+secrets:
+  timetree_session:
+    file: "${TIMETREE_SECRET_PATH:-./secrets/timetree_session.enc}"
+  timetree_key:
+    file: "${TIMETREE_KEY_PATH:-./keys/timetree.key}"
+
+volumes:
+  timetable_data:

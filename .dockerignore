@@ -1,0 +1,14 @@
+**
+!index.html
+!version.json
+!release-manifest.json
+!calendar.js
+!tasks.js
+!media.js
+!timetree_sync.py
+!secret_crypto.py
+!requirements-sync.txt
+!docker/
+!docker/**
+docker/node_modules/
+docker/**/__pycache__/

@@ -1,0 +1,14 @@
+{
+  "release": "timetable-20261014-6",
+  "files": {
+    "public/index.html": "e787d3e0a5104211b27b05b593427b8a24bf9d63cb544f0b328ead5e9b677b9b",
+    "public/calendar.js": "b4875799f4a3387166484570de05cb9ce96b5fad5c35c1b28322ac1513862350",
+    "public/tasks.js": "9451b5eb51009803ecee278e405bd2358d6528b3af52ac7cbe691d4005f15f2b",
+    "public/media.js": "b891add6f367449d64b3e484cee5bd8c4c84b2a748acf84cac235f26bcc62b3f",
+    "public/version.json": "ad4be10349b6fc0e20f6354058a860d8e82fa949efab6561eee3abede9784888",
+    "init-db.mjs": "e498a2b09c853aaf9e80403a195c2bce64ac3d409f1c7e4f966a2b9fb0f0d5fb",
+    "media-index.mjs": "0d804fdeffb3437135bdf8bb8929842b2a8081a09d4e99ac0bd067ff80121cea",
+    "display-server.mjs": "98f616fb7e6cbb8790d15a9df7ac24b7eaaba3e53fc4ef835fc1b4cf691efd19",
+    "display-entrypoint.sh": "a3ae1c15504bdece58aa893a03edcea5ab1bd27aee3953265f5b723f29fe26f1"
+  }
+}
