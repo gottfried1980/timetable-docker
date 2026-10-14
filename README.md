@@ -36,6 +36,23 @@ Daily agenda, weekly view, an Austrian yearly calendar, editable tasks with
 due dates, optional personal photo slideshows, a local music player and
 reminders before upcoming appointments.
 
+## Sync interval
+
+The `sync` container imports the TimeTree calendar once at startup and then
+every 15 minutes (`SYNC_INTERVAL_SECONDS=900` in `compose.yaml`, minimum 60).
+A single run is aborted after 10 minutes; if it fails, the last successful
+state stays visible and the next interval retries. The Windows scheduled task
+uses the same 15-minute rhythm. To change it, set the variable in `.env` or
+`compose.yaml`, for example:
+
+```yaml
+SYNC_INTERVAL_SECONDS: "300"   # every 5 minutes
+```
+
+Keep in mind that every run uses the unofficial TimeTree web interface with a
+session cookie, so very short intervals increase the risk of the session being
+invalidated.
+
 ## Installation
 
 See **[INSTALL.md](INSTALL.md)** for the complete installation guide, including
