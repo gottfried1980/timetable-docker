@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/banner.svg" alt="Timetable Display: family calendar on your TV, hosted on your NAS" width="100%">
+</p>
+
 # Timetable Display
 
 A home calendar dashboard for a TV, kiosk computer or Raspberry Pi browser.
