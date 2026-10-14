@@ -3,9 +3,38 @@
 A home calendar dashboard for a TV, kiosk computer or Raspberry Pi browser.
 The NAS runs the application; the display device only needs a browser.
 
-Features include a daily agenda, weekly view, an Austrian yearly calendar,
-editable tasks with due dates, optional personal photo slideshows, a local
-music player and reminders before upcoming appointments.
+## What is this for?
+
+This project turns a spare screen into an always-on family wall calendar.
+
+The typical situation: the family shares a TimeTree calendar on their phones,
+but at home nobody looks at it, appointments get missed, and the paper
+calendar in the kitchen is always out of date. At the same time a NAS is
+already running around the clock, and an old TV, monitor or Raspberry Pi is
+gathering dust.
+
+With this project:
+
+- The NAS imports the shared TimeTree calendar automatically every 15 minutes.
+- A TV or kiosk screen shows today's agenda, the week ahead and the whole year
+  at a glance, without anyone having to touch it.
+- Reminders pop up on the screen before an appointment starts.
+- Household tasks with due dates can be added and ticked off directly on the
+  screen.
+- Optionally the screen doubles as a digital photo frame and plays local music.
+
+Everything stays on your home network. There is no cloud service, no account
+with a third-party dashboard provider, and no personal data leaves the NAS.
+
+Use it if you want one central, always visible overview of the household's
+appointments and tasks. It is not meant for public internet access, multi-user
+cloud scenarios or installations without a NAS/server of your own.
+
+## Features
+
+Daily agenda, weekly view, an Austrian yearly calendar, editable tasks with
+due dates, optional personal photo slideshows, a local music player and
+reminders before upcoming appointments.
 
 ## Installation
 
