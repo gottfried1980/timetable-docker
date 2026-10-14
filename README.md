@@ -81,3 +81,7 @@ Administrators with access to both the key and ciphertext can decrypt it.
 
 The current interface uses German labels and Austrian dates. The installation
 and operating documentation is in English.
+
+## License
+
+This project is released under the MIT License. See [LICENSE](LICENSE).
