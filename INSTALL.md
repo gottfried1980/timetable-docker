@@ -211,6 +211,25 @@ Back up media and the encryption key separately. Use the same Compose project
 name during updates so the existing named volume is reused. **Never use
 `docker compose down -v` unless you intend to delete the database.**
 
+## Clean rebuild and removal
+
+`cleanup-nas.sh` removes only this project's containers, network and locally
+built images. The database volume, `media`, `keys`, `secrets` and `.env` are
+kept. Use it before a clean rebuild (for example after changing a Dockerfile)
+or to take the project off the NAS without losing data:
+
+```sh
+cd /volume1/docker/timetable-docker
+sh cleanup-nas.sh
+sudo docker compose up -d --build   # only if you want to rebuild
+```
+
+The script refuses to run outside `/volume1/docker/timetable-docker` or when
+`compose.yaml` is missing, so it cannot hit another Compose project by
+accident. It runs `docker compose down --remove-orphans --rmi local` without
+`-v`, so appointments and tasks survive and reappear after the next start. To
+delete the database as well, follow the warning in the backups section above.
+
 ## Tests and deployment status
 
 Python sync/encryption tests, browser tests and a real local JSON Server
